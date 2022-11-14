@@ -1,0 +1,8 @@
+{
+	"name": "WordPress",
+	"image": "mcr.microsoft.com/devcontainers/universal:2-linux",
+	"postCreateCommand": "./.devcontainer/post-create.sh",
+	"postAttachCommand": "docker-compose up -d",
+	"remoteUser": "root"
+  }
+  

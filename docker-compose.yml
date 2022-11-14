@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    ports:
+      - 8080:80
+    volumes:
+      - ./src/:/var/www/html
+      - ./config/php.config.ini:/usr/local/etc/php/conf.d/conf.ini
+    environment:
+      ENV: ${ENV?}
+      WORDPRESS_DB_HOST: wordpress-db
+      WORDPRESS_DB_NAME: ${DATABASE_NAME?}
+      WORDPRESS_DB_USER: ${DATABASE_USER?}
+      WORDPRESS_DB_PASSWORD: ${DATABASE_PASSWORD?}
+      MAILTRAP_USER: ${MAILTRAP_USER}
+      MAILTRAP_PASSWORD: ${MAILTRAP_PASSWORD}
+    networks:
+      - wordpress
+    depends_on:
+      - wordpress-db
+    links:
+      - wordpress-db
+  wordpress-db:
+    image: mariadb:latest
+    container_name: wordpress-db
+    ports:
+      - 3306:3306
+    volumes:
+      - wordpress-data:/var/lib/mysql
+    environment:
+      MYSQL_USER: ${DATABASE_USER?}
+      MYSQL_DATABASE: ${DATABASE_NAME?}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD?}
+      MYSQL_ROOT_PASSWORD: "${DATABASE_ROOT_PASSWORD?}"
+    networks:
+      - wordpress
+  wordpress-cli:
+    image: wordpress:cli
+    container_name: wordpress-cli
+    user: '33:33'
+    command: /var/local/wp-setup.sh
+    networks:
+      - wordpress
+    depends_on:
+      - wordpress
+      - wordpress-db
+    volumes:
+      - ./src/:/var/www/html
+      - ./scripts/wp-setup.sh:/var/local/wp-setup.sh
+      - ./config/php.config.ini:/usr/local/etc/php/conf.d/conf.ini
+    environment:
+      SITE_URL: ${SITE_URL?}
+      SITE_TITLE: ${SITE_TITLE?}
+      SITE_ADMIN_USER: ${SITE_ADMIN_USER?}
+      SITE_ADMIN_PASSWORD: ${SITE_ADMIN_PASSWORD?}
+      SITE_ADMIN_EMAIL: ${SITE_ADMIN_EMAIL?}
+      WORDPRESS_DB_HOST: wordpress-db
+      WORDPRESS_DB_NAME: ${DATABASE_NAME?}
+      WORDPRESS_DB_USER: ${DATABASE_USER?}
+      WORDPRESS_DB_PASSWORD: ${DATABASE_PASSWORD?}
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    networks:
+      - wordpress
+    ports:
+      - 8085:80
+    environment:
+      PMA_HOST: wordpress-db
+      MYSQL_ROOT_PASSWORD: "${DATABASE_ROOT_PASSWORD?}"
+volumes:
+  wordpress-data:
+    name: wordpress-data
+networks:
+  wordpress:
+    name: wordpress
+    driver: bridge
